@@ -65,6 +65,7 @@ def create_server_socket():
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     try:
+        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)    # fix for tests in Linux: port is not available a few seconds after killing the subprocess
         server_socket.bind((host, port))
     except socket.error as msg:
         print("Bind failed. Error: {}".format(msg), flush=True)

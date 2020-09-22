@@ -1,4 +1,5 @@
 import os
+import sys
 from queue import Queue
 import pytest
 import subprocess
@@ -19,7 +20,7 @@ def enqueue_output(out, queue):
 
 
 def run_process(filename: str) -> (subprocess, Queue):
-    process = subprocess.Popen("python {}".format(filename), shell=False,
+    process = subprocess.Popen([sys.executable, filename], shell=False,
                                stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None)
     process_stdout_queue = Queue()
     t = threading.Thread(target=enqueue_output, args=(process.stdout, process_stdout_queue))
