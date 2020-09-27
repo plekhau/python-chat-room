@@ -1,7 +1,6 @@
 import os
 import sys
-from queue import Queue
-import pytest
+from queue import Queue, Empty
 import subprocess
 import threading
 
@@ -33,7 +32,7 @@ def wait_line_from_stdout(q, timeout=10):
     while timeout > 0:
         try:
             line = q.get(timeout=1)
-        except:
+        except Empty:
             pass
         else:  # got line
             return line.decode().strip()
@@ -301,7 +300,8 @@ def test_server_commands_participants():
     assert wait_line_from_stdout(server_stdout_queue) == "[{}] -> {}".format(username1, message1)
     assert "Accepted new connection from" in wait_line_from_stdout(client1_stdout_queue)
     assert "Accepted new connection from" in wait_line_from_stdout(client1_stdout_queue)
-    response = "[server] -> [{}] List of participants: {}".format(username1, ", ".join([username1, username2, username3]))
+    response = "[server] -> [{}] List of participants: {}"\
+        .format(username1, ", ".join([username1, username2, username3]))
     assert wait_line_from_stdout(server_stdout_queue) == response
     assert wait_line_from_stdout(client1_stdout_queue) == response
 

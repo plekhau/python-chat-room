@@ -13,8 +13,7 @@ import select
 import socket
 import sys
 from time import sleep
-
-BUFFER_SIZE = 2048
+import common
 
 
 def start_client():
@@ -27,7 +26,7 @@ def start_client():
         port = int(sys.argv[2])
     else:
         host = "localhost"
-        port = 8888
+        port = common.DEFAULT_PORT
 
     try:
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -52,7 +51,7 @@ def start_client():
         try:
             for socks in read_sockets:
                 if socks == client_socket:
-                    message = socks.recv(BUFFER_SIZE).decode()
+                    message = socks.recv(common.BUFFER_SIZE).decode()
                     print(message, flush=True)
 
             message = sys.stdin.readline().strip()
