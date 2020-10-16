@@ -1,15 +1,21 @@
+"""
+Quiz: all players game
+"""
+# pylint: disable=C0103     # UPPER_CASE naming style
+# pylint: disable=W0603     # global statement
 import random
 import socket
-import common
+from typing import Optional
 from threading import Timer
+import common
 
 questions = [("How many bytes in one kilobyte?", "1024", "equal"),
              ("What is the capital of Belarus?", "Minsk", "equal"),
              ("Who is the creator of the Python?", "Guido", "contains")]
-_answer = None          # right answer on the current question
-_comparison = None      # how to compare user answer and right one (equal, contains)
-_winner = None          # quiz winner
-_log = None             # log of user answers
+_answer: str            # right answer on the current question
+_comparison: str        # how to compare user answer and right one (equal, contains)
+_winner: Optional[str]  # quiz winner
+_log: str               # log of user answers
 
 
 def init_new_game():
@@ -22,7 +28,7 @@ def init_new_game():
     _log = ""
     common.send_to_all(f"Let's start Quiz round!\nYou have 30 sec and you can send several answers\n{question}")
     common.all_player_game["game"] = all_players_game_quiz
-    Timer(30, all_players_game_quiz, [None, common.stop_game_msg]).start()
+    Timer(30, all_players_game_quiz, [None, common.STOP_GAME_MSG]).start()
 
 
 def is_right_answer(answer: str):
@@ -37,11 +43,13 @@ def is_right_answer(answer: str):
     """
     if _comparison == "equal":
         return _answer.lower() == answer.lower()
-    else:  # contains
-        return _answer.lower() in answer.lower()
+    return _answer.lower() in answer.lower()    # _comparison = "contains"
 
 
 def finish_game():
+    """
+    Send result messages and remove game
+    """
     if len(_log) > 0:
         response = "Participants' answer(s):\n{}The right answer: {}\n".format(_log, _answer)
         if _winner is None:
@@ -54,7 +62,7 @@ def finish_game():
     common.all_player_game.clear()
 
 
-def all_players_game_quiz(sock: socket, msg: str):
+def all_players_game_quiz(sock: Optional[socket.socket], msg: str):
     """
     Game: Quiz (all players game)
 
@@ -63,9 +71,11 @@ def all_players_game_quiz(sock: socket, msg: str):
     :return: None
     """
     global _winner, _log
-    if msg == common.init_game_msg:
+    if msg == common.INIT_GAME_MSG:
         init_new_game()
-    elif msg == common.stop_game_msg:
+    elif sock is None:
+        raise ValueError("sock=None is allowed only with init message, but message is {}".format(msg))
+    elif msg == common.STOP_GAME_MSG:
         finish_game()
     else:
         _log += "[{}] {}\n".format(common.sockets_list[sock], msg)

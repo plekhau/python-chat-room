@@ -3,16 +3,17 @@ Low-level functionality with sockets + global variables
 """
 import socket
 import sys
+from typing import Dict, Callable
 
 BUFFER_SIZE = 2048
 DEFAULT_PORT = 8888
-init_game_msg = "init_game"
-stop_game_msg = "stop_game"
+INIT_GAME_MSG = "init_game"
+STOP_GAME_MSG = "stop_game"
 
-server_socket = None
-sockets_list = {}
-one_player_game_list = {}  # contains active one player games with their progresses if needed
-all_player_game = {}  # contains active all player game with its progress
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sockets_list: Dict[socket.socket, str] = {}
+one_player_game_list: Dict[socket.socket, Dict] = {}  # contains active one player games with their progresses if needed
+all_player_game: Dict[str, Callable] = {}  # contains active all player game with its progress
 
 
 def get_socket_by_name(name: str):
@@ -26,13 +27,13 @@ def get_socket_by_name(name: str):
     for sock in sockets_list:
         if sockets_list[sock] == name:
             return sock
+    return None
 
 
 def create_server_socket():
     """
     Create server socket
     """
-    global server_socket
     if len(sys.argv) == 3:
         host = str(sys.argv[1])
         port = int(sys.argv[2])
@@ -41,8 +42,6 @@ def create_server_socket():
         host = ""
         port = DEFAULT_PORT
         print("Try to run server on localhost", flush=True)
-
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     try:
         # fix for tests in Linux: port is not available a few seconds after killing the subprocess
@@ -58,7 +57,7 @@ def create_server_socket():
     sockets_list[server_socket] = "server"
 
 
-def send_to_one(sock: socket, msg: str):
+def send_to_one(sock: socket.socket, msg: str):
     """
     Wrapper for socket.sendall
 
@@ -69,7 +68,7 @@ def send_to_one(sock: socket, msg: str):
     sock.sendall(msg.encode())
 
 
-def send_to_all(msg: str, ignore_socket: socket = None):
+def send_to_all(msg: str, ignore_socket: socket.socket = None):
     """
     Send {message} to all connected client sockets except {ignore_socket} + print in server log
     """
@@ -80,7 +79,7 @@ def send_to_all(msg: str, ignore_socket: socket = None):
             send_to_one(sock, msg)
 
 
-def private_message(sender_sock: socket, recipient_socket: socket, msg: str):
+def private_message(sender_sock: socket.socket, recipient_socket: socket.socket, msg: str):
     """
     Private message that only the recipient will see
 
@@ -94,7 +93,7 @@ def private_message(sender_sock: socket, recipient_socket: socket, msg: str):
     send_to_one(recipient_socket, msg)
 
 
-def user_registration(sock: socket, msg: str):
+def user_registration(sock: socket.socket, msg: str):
     """
     Check that username is unique and register this name.
     Otherwise, asks for another username.

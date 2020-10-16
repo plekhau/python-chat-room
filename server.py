@@ -21,13 +21,14 @@ Features:
 """
 import select
 import socket
+from typing import Optional, Tuple
 import common
 from games.game_21 import one_player_game_21
 from games.game_quiz import all_players_game_quiz
 from games.game_rock_paper_scissors import one_player_game_rock_paper_scissors
 
 
-def split_message(msg: str) -> (str, str):
+def split_message(msg: str) -> Tuple[Optional[str], str]:
     """
     Split message from socket if it has format "[recipient] command"
     Otherwise, return whole message as command
@@ -40,11 +41,10 @@ def split_message(msg: str) -> (str, str):
         recipient = msg[1:pos].strip()
         cmd = msg[pos + 1:].strip()
         return recipient, cmd
-    else:
-        return None, msg
+    return None, msg
 
 
-def process_message_to_server(sock: socket, cmd: str):
+def process_message_to_server(sock: socket.socket, cmd: str):
     """
     Process commands like '[server] <command>'
 
@@ -72,16 +72,16 @@ def process_message_to_server(sock: socket, cmd: str):
         common.private_message(common.server_socket, sock, "Participants count: {}"
                                .format(len(common.sockets_list.values()) - 1))
     elif cmd == "rock-paper-scissors":
-        one_player_game_rock_paper_scissors(sock, common.init_game_msg)
+        one_player_game_rock_paper_scissors(sock, common.INIT_GAME_MSG)
     elif cmd == "21":
-        one_player_game_21(sock, common.init_game_msg)
+        one_player_game_21(sock, common.INIT_GAME_MSG)
     elif cmd == "quiz":
-        all_players_game_quiz(None, common.init_game_msg)
+        all_players_game_quiz(None, common.INIT_GAME_MSG)
     else:
         common.private_message(common.server_socket, sock, "Unknown command")
 
 
-def process_message(sock: socket, msg: str):
+def process_message(sock: socket.socket, msg: str):
     """
     Common function for processing message from socket
 
@@ -121,19 +121,19 @@ def start_server():
     common.create_server_socket()
 
     while True:
-        read_sockets, write_socket, error_socket = select.select(common.sockets_list.keys(), [], [])
+        read_sockets, _, _ = select.select(common.sockets_list.keys(), [], [])
 
         for read_socket in read_sockets:
             if read_socket == common.server_socket:
-                client_socket, addr = read_socket.accept()
+                client_socket, _ = read_socket.accept()
                 common.sockets_list[client_socket] = ""
-                common.send_to_one(client_socket, "Hi! You are trying to connect to char room.\nWhat is your name?")
+                common.send_to_one(client_socket, "Hi! You are trying to connect to chat room.\nWhat is your name?")
             else:
                 try:
                     message = read_socket.recv(common.BUFFER_SIZE).decode()
                     if not message:
                         raise ConnectionError
-                    elif not common.sockets_list[read_socket]:
+                    if not common.sockets_list[read_socket]:
                         common.user_registration(read_socket, message)
                     else:
                         process_message(read_socket, message)

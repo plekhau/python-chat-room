@@ -46,7 +46,7 @@ def start_client():
 
     while True:
         sockets_list = [client_socket]
-        read_sockets, write_socket, error_socket = select.select(sockets_list, [], [], 1)
+        read_sockets, _, _ = select.select(sockets_list, [], [], 1)
 
         try:
             for socks in read_sockets:

@@ -1,9 +1,13 @@
+"""
+21: one player game with server
+"""
 import random
 import socket
+from typing import Tuple
 import common
 
 
-def init_new_game(sock: socket):
+def init_new_game(sock: socket.socket):
     """
     Initialization game parameters, send rules to user
 
@@ -33,11 +37,11 @@ def server_choice(player_score: int, server_score: int, is_throwing_for_player: 
     if is_throwing_for_player:
         server = random.randint(0, 10) if player_score < 12 else 10
     else:
-        server = random.randint(0, 10)
+        server = random.randint(0, 10) if server_score < 11 else random.choice([0, 8, 9, 10])
     return server
 
 
-def one_round(sock: socket, msg: str) -> (int, int, int, int):
+def one_round(sock: socket.socket, msg: str) -> Tuple[int, int, int, int]:
     """
     One round:
         - get current scores
@@ -62,7 +66,7 @@ def one_round(sock: socket, msg: str) -> (int, int, int, int):
     return player, server, player_score, server_score
 
 
-def round_response(sock: socket, player: int, server: int, player_score: int, server_score: int) -> str:
+def round_response(sock: socket.socket, player: int, server: int, player_score: int, server_score: int) -> str:
     """
     Generate round response. Remove current game if it is finished
 
@@ -97,7 +101,7 @@ def round_response(sock: socket, player: int, server: int, player_score: int, se
     return response
 
 
-def one_player_game_21(sock: socket, msg: str):
+def one_player_game_21(sock: socket.socket, msg: str):
     """
     Game: 21
 
@@ -105,7 +109,7 @@ def one_player_game_21(sock: socket, msg: str):
     :param msg: str, client choice (numbers [0..10] or stop)
     :return: None
     """
-    if msg == common.init_game_msg:
+    if msg == common.INIT_GAME_MSG:
         init_new_game(sock)
     else:
         if "stop" in msg and common.one_player_game_list[sock]["status"] == "throwing_for_player":

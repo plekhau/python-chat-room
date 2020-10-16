@@ -31,10 +31,10 @@ python client.py 192.168.100.5 8888
 For running tests using pytest:
 #### Windows
 ```bash
-py.test -s tests.py
+pytest -s .
 ```
 #### Linux
 ```bash
-python3 -m pytest -s tests.py
+python3 -m pytest -s .
 ```
 *Some scenarios are covered, except for games (rock-paper-scissors, 21, quiz)

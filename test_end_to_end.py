@@ -1,8 +1,16 @@
+"""
+Unit tests
+"""
+# pylint: disable=C0116     # docstrings
+# pylint: disable=C0103     # UPPER_CASE naming style
+# pylint: disable=W0603     # global statement
+# pylint: disable=W0511     # TODO
 import os
 import sys
 from queue import Queue, Empty
 import subprocess
 import threading
+from typing import Tuple
 
 server_process = None
 client_process = None
@@ -18,10 +26,10 @@ def enqueue_output(out, queue):
     out.close()
 
 
-def run_process(filename: str) -> (subprocess, Queue):
+def run_process(filename: str) -> Tuple[subprocess.Popen, Queue]:
     process = subprocess.Popen([sys.executable, filename], shell=False,
                                stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None)
-    process_stdout_queue = Queue()
+    process_stdout_queue: Queue = Queue()
     t = threading.Thread(target=enqueue_output, args=(process.stdout, process_stdout_queue))
     t.daemon = True  # thread dies with the program
     t.start()
@@ -39,7 +47,7 @@ def wait_line_from_stdout(q, timeout=10):
         timeout -= 1
 
 
-def start_server() -> (subprocess, Queue):
+def start_server() -> Tuple[subprocess.Popen, Queue]:
     global server_process
     process, process_stdout_queue = run_process("server.py")
     server_process = process
@@ -48,12 +56,12 @@ def start_server() -> (subprocess, Queue):
     return process, process_stdout_queue
 
 
-def start_client(username: str, correct_login=True) -> (subprocess, Queue):
+def start_client(username: str, correct_login=True) -> Tuple[subprocess.Popen, Queue]:
     global client_process
     process, process_stdout_queue = run_process("client.py")
     client_process = process
     assert wait_line_from_stdout(process_stdout_queue) == "Socket Connected to localhost on ip 127.0.0.1"
-    assert wait_line_from_stdout(process_stdout_queue) == "Hi! You are trying to connect to char room."
+    assert wait_line_from_stdout(process_stdout_queue) == "Hi! You are trying to connect to chat room."
     assert wait_line_from_stdout(process_stdout_queue) == "What is your name?"
     write_stdin(process, username)
     if correct_login:
@@ -72,7 +80,6 @@ def write_stdin(process, data):
 
 def setup():
     print(os.environ.get('PYTEST_CURRENT_TEST').split(':')[-1].split(' ')[0])  # test name
-    pass
 
 
 def teardown():
@@ -88,7 +95,7 @@ def test_simple_login():
     user_msg = "User message"
 
     server_process, server_stdout_queue = start_server()
-    client1_process, client1_stdout_queue = start_client(username)
+    client1_process, _ = start_client(username)
 
     write_stdin(client1_process, user_msg)
     assert "Accepted new connection from" in wait_line_from_stdout(server_stdout_queue)
@@ -102,7 +109,7 @@ def test_simple_login_with_russian_symbols():
     user_msg = "Привет, мир!"
 
     server_process, server_stdout_queue = start_server()
-    client1_process, client1_stdout_queue = start_client(username)
+    client1_process, _ = start_client(username)
 
     write_stdin(client1_process, user_msg)
     assert "Accepted new connection from" in wait_line_from_stdout(server_stdout_queue)
@@ -288,7 +295,7 @@ def test_server_commands_participants():
 
     server_process, server_stdout_queue = start_server()
     client1_process, client1_stdout_queue = start_client(username1)
-    client2_process, client2_stdout_queue = start_client(username2)
+    client2_process, _ = start_client(username2)
     client3_process, client3_stdout_queue = start_client(username3)
 
     assert "Accepted new connection from" in wait_line_from_stdout(server_stdout_queue)

@@ -1,16 +1,19 @@
+"""
+Rock-paper-scissors: one player game with server
+"""
 import random
 import socket
 import common
 
 reductions = {"r": "rock", "p": "paper", "s": "scissors"}
-win_msg = "You won!"
-lose_msg = "Server won!"
-rules = {"rs": win_msg, "rp": lose_msg,
-         "pr": win_msg, "ps": lose_msg,
-         "sp": win_msg, "sr": lose_msg}
+WIN_MSG = "You won!"
+LOSE_MSG = "Server won!"
+rules = {"rs": WIN_MSG, "rp": LOSE_MSG,
+         "pr": WIN_MSG, "ps": LOSE_MSG,
+         "sp": WIN_MSG, "sr": LOSE_MSG}
 
 
-def one_player_game_rock_paper_scissors(sock: socket, msg: str):
+def one_player_game_rock_paper_scissors(sock: socket.socket, msg: str):
     """
     Game: rock-paper-scissors
 
@@ -18,7 +21,7 @@ def one_player_game_rock_paper_scissors(sock: socket, msg: str):
     :param msg: str, client choice (rock/r, paper/p or scissors/s)
     :return: None
     """
-    if msg == common.init_game_msg:
+    if msg == common.INIT_GAME_MSG:
         common.private_message(common.server_socket, sock,
                                "Let's play rock-paper-scissors!\nWhat is your choice?"
                                " (need to send: rock or r / paper or p /scissors or s)")
