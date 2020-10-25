@@ -22,10 +22,13 @@ Features:
 import select
 import socket
 from typing import Optional, Tuple
+import logging.config
 import common
 from games.game_21 import one_player_game_21
 from games.game_quiz import all_players_game_quiz
 from games.game_rock_paper_scissors import one_player_game_rock_paper_scissors
+
+logger = logging.getLogger('chat_logger')
 
 
 def split_message(msg: str) -> Tuple[Optional[str], str]:
@@ -101,7 +104,7 @@ def process_message(sock: socket.socket, msg: str):
             else:
                 recipient_socket = common.get_socket_by_name(recipient)
                 msg = "[{}] -> [{}] {}".format(common.sockets_list[sock], recipient, cmd)
-                print(msg, flush=True)
+                logger.info(msg)
 
                 if recipient_socket is None:
                     common.send_to_one(sock, "Unknown recipient. Please try again.")
@@ -111,7 +114,7 @@ def process_message(sock: socket.socket, msg: str):
                     # Private message from client to client
                     common.send_to_one(recipient_socket, msg)
     except Exception as ex:
-        print("Something goes wrong:(\n{}".format(ex), flush=True)
+        logger.error("Something goes wrong:(\n{}".format(ex))
 
 
 def start_server():
@@ -140,7 +143,7 @@ def start_server():
                 except ConnectionError:
                     username = common.sockets_list.pop(read_socket)
                     if username == "":
-                        print("Unknown user was disconnected", flush=True)
+                        logger.info("Unknown user was disconnected")
                     else:
                         common.send_to_all("User '{}' was disconnected".format(username))
 

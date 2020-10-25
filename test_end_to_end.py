@@ -11,6 +11,7 @@ from queue import Queue, Empty
 import subprocess
 import threading
 from typing import Tuple
+import logging.config
 
 server_process = None
 client_process = None
@@ -79,7 +80,8 @@ def write_stdin(process, data):
 
 
 def setup():
-    print(os.environ.get('PYTEST_CURRENT_TEST').split(':')[-1].split(' ')[0])  # test name
+    logger = logging.getLogger('chat_logger')
+    logger.info(os.environ.get('PYTEST_CURRENT_TEST').split(':')[-1].split(' ')[0])  # test name
 
 
 def teardown():

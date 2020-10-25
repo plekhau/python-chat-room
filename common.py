@@ -4,6 +4,8 @@ Low-level functionality with sockets + global variables
 import socket
 import sys
 from typing import Dict, Callable
+import logging.config
+import time
 
 BUFFER_SIZE = 2048
 DEFAULT_PORT = 8888
@@ -14,6 +16,39 @@ server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sockets_list: Dict[socket.socket, str] = {}
 one_player_game_list: Dict[socket.socket, Dict] = {}  # contains active one player games with their progresses if needed
 all_player_game: Dict[str, Callable] = {}  # contains active all player game with its progress
+
+logging.config.fileConfig('logging.conf')
+logger = logging.getLogger('chat_logger')
+
+
+class Timer:
+    """
+    Context manager for checking code performance
+    """
+    def __init__(self, name):
+        self.name = name
+        self.start_time = None
+
+    def __enter__(self):
+        self.start_time = time.time()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        duration = (time.time() - self.start_time) * 1000
+        logger.debug("{}: {}".format(self.name, duration))
+
+
+def timer(fun):
+    """
+    Decorator for checking function performance
+    """
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = fun(*args, **kwargs)
+        duration = (time.time() - start_time) * 1000
+        logger.debug("{}: {}".format(fun.__name__, duration))
+        return result
+    return wrapper
 
 
 def get_socket_by_name(name: str):
@@ -37,11 +72,11 @@ def create_server_socket():
     if len(sys.argv) == 3:
         host = str(sys.argv[1])
         port = int(sys.argv[2])
-        print("Try to run server using ip {}:{}".format(host, port), flush=True)
+        logger.error("Try to run server using ip {}:{}".format(host, port))
     else:
         host = ""
         port = DEFAULT_PORT
-        print("Try to run server on localhost", flush=True)
+        logger.error("Try to run server on localhost")
 
     try:
         # fix for tests in Linux: port is not available a few seconds after killing the subprocess
@@ -49,11 +84,11 @@ def create_server_socket():
 
         server_socket.bind((host, port))
     except socket.error as msg:
-        print("Bind failed. Error: {}".format(msg), flush=True)
+        logger.error("Bind failed. Error: {}".format(msg))
         sys.exit()
 
     server_socket.listen(100)
-    print("Server started successfully", flush=True)
+    logger.info("Server started successfully")
     sockets_list[server_socket] = "server"
 
 
@@ -72,7 +107,7 @@ def send_to_all(msg: str, ignore_socket: socket.socket = None):
     """
     Send {message} to all connected client sockets except {ignore_socket} + print in server log
     """
-    print(msg, flush=True)
+    logger.info(msg)
     msg += "\n"
     for sock in sockets_list:
         if sock not in [ignore_socket, server_socket] and sockets_list[sock]:
@@ -89,7 +124,7 @@ def private_message(sender_sock: socket.socket, recipient_socket: socket.socket,
     :return: None
     """
     msg = "[{}] -> [{}] {}".format(sockets_list[sender_sock], sockets_list[recipient_socket], msg)
-    print(msg, flush=True)
+    logger.info(msg)
     send_to_one(recipient_socket, msg)
 
 

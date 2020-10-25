@@ -8,7 +8,7 @@ Start:
 
 See server documentation for details about chat features
 """
-
+import logging.config
 import select
 import socket
 import sys
@@ -21,6 +21,8 @@ def start_client():
     Create client socket and connect to server socket.
     Just receives and sends messages
     """
+    logger = logging.getLogger('chat_logger')
+
     if len(sys.argv) == 3:
         host = str(sys.argv[1])
         port = int(sys.argv[2])
@@ -31,18 +33,18 @@ def start_client():
     try:
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     except socket.error:
-        print("Failed to create socket", flush=True)
+        logger.error("Failed to create socket")
         sys.exit()
 
     try:
         remote_ip = socket.gethostbyname(host)
     except socket.gaierror:
-        print("Hostname could not be resolved. Exiting", flush=True)
+        logger.error("Hostname could not be resolved. Exiting")
         sys.exit()
 
     client_socket.connect((remote_ip, port))
 
-    print("Socket Connected to {} on ip {}".format(host, remote_ip), flush=True)
+    logger.info("Socket Connected to {} on ip {}".format(host, remote_ip))
 
     while True:
         sockets_list = [client_socket]
@@ -52,14 +54,14 @@ def start_client():
             for socks in read_sockets:
                 if socks == client_socket:
                     message = socks.recv(common.BUFFER_SIZE).decode()
-                    print(message, flush=True)
+                    logger.info(message)
 
             message = sys.stdin.readline().strip()
             if message:
                 client_socket.sendall(message.encode())
                 sleep(0.1)
         except ConnectionError:
-            print("You were disconnected.", flush=True)
+            logger.warning("You were disconnected.")
             break
 
     client_socket.close()

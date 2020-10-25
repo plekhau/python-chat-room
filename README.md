@@ -29,12 +29,9 @@ python client.py 192.168.100.5 8888
 
 ## Tests
 For running tests using pytest:
-#### Windows
 ```bash
-pytest -s .
-```
-#### Linux
-```bash
-python3 -m pytest -s .
+python -m pytest -s --cache-clear .
 ```
 *Some scenarios are covered, except for games (rock-paper-scissors, 21, quiz)
+
+** cache-clear is used as just one more parameter to fix test_create_server_socket
