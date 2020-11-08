@@ -12,8 +12,55 @@ import logging.config
 import select
 import socket
 import sys
-from time import sleep
+import asyncio
+from concurrent.futures import FIRST_COMPLETED
+from aioconsole import ainput
 import common
+
+client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+logger = logging.getLogger('chat_logger')
+
+
+async def receiving_messages(loop):
+    """
+    Receiving messages from server
+    """
+    while True:
+        try:
+            read_sockets, _, _ = select.select([client_socket], [], [], 1)
+
+            for socks in read_sockets:
+                if socks == client_socket:
+                    # message = socks.recv(common.BUFFER_SIZE).decode().strip()
+                    message = (await loop.sock_recv(socks, common.BUFFER_SIZE)).decode().strip()
+                    logger.info(message)
+            await asyncio.sleep(0.03)
+        except ConnectionError:
+            logger.warning("You were disconnected.")
+            break
+
+
+async def sending_messages(loop):
+    """
+    Get message from console input and send it to server
+    """
+    while True:
+        message = (await ainput()).strip()
+        if message:
+            try:
+                await loop.sock_sendall(client_socket, message.encode())
+            except ConnectionError:
+                logger.warning("You were disconnected.")
+                break
+
+
+def process_messages():
+    """
+    Run receiving/sending messages using asyncio
+    """
+    loop = asyncio.get_event_loop()
+    tasks = [receiving_messages(loop), sending_messages(loop)]
+    loop.run_until_complete(asyncio.wait(tasks, return_when=FIRST_COMPLETED))
 
 
 def start_client():
@@ -21,7 +68,6 @@ def start_client():
     Create client socket and connect to server socket.
     Just receives and sends messages
     """
-    logger = logging.getLogger('chat_logger')
 
     if len(sys.argv) == 3:
         host = str(sys.argv[1])
@@ -29,12 +75,6 @@ def start_client():
     else:
         host = "localhost"
         port = common.DEFAULT_PORT
-
-    try:
-        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    except socket.error:
-        logger.error("Failed to create socket")
-        sys.exit()
 
     try:
         remote_ip = socket.gethostbyname(host)
@@ -46,23 +86,7 @@ def start_client():
 
     logger.info("Socket Connected to {} on ip {}".format(host, remote_ip))
 
-    while True:
-        sockets_list = [client_socket]
-        read_sockets, _, _ = select.select(sockets_list, [], [], 1)
-
-        try:
-            for socks in read_sockets:
-                if socks == client_socket:
-                    message = socks.recv(common.BUFFER_SIZE).decode()
-                    logger.info(message)
-
-            message = sys.stdin.readline().strip()
-            if message:
-                client_socket.sendall(message.encode())
-                sleep(0.1)
-        except ConnectionError:
-            logger.warning("You were disconnected.")
-            break
+    process_messages()
 
     client_socket.close()
 

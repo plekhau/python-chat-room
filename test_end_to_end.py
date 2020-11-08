@@ -4,9 +4,9 @@ Unit tests
 # pylint: disable=C0116     # docstrings
 # pylint: disable=C0103     # UPPER_CASE naming style
 # pylint: disable=W0603     # global statement
-# pylint: disable=W0511     # TODO
 import os
 import sys
+import time
 from queue import Queue, Empty
 import subprocess
 import threading
@@ -80,14 +80,17 @@ def write_stdin(process, data):
 
 
 def setup():
-    logger = logging.getLogger('chat_logger')
-    logger.info(os.environ.get('PYTEST_CURRENT_TEST').split(':')[-1].split(' ')[0])  # test name
+    time.test_start = time.time()
 
 
 def teardown():
     for process in [server_process, client_process, client1_process, client2_process, client3_process]:
         if process:
             process.kill()
+    logger = logging.getLogger('chat_logger')
+    logger.info("Test: {}, Duration: {}"
+                .format(os.environ.get('PYTEST_CURRENT_TEST').split(':')[-1].split(' ')[0],
+                        time.time() - time.test_start))
 
 
 def test_simple_login():
@@ -180,22 +183,17 @@ def test_public_messages():
     assert "Accepted new connection from" in wait_line_from_stdout(server_stdout_queue)
     assert "Accepted new connection from" in wait_line_from_stdout(server_stdout_queue)
 
-    assert wait_line_from_stdout(client1_stdout_queue, 1) is None
-    write_stdin(client1_process, "")
     assert "Accepted new connection from" in wait_line_from_stdout(client1_stdout_queue)
     assert "Accepted new connection from" in wait_line_from_stdout(client1_stdout_queue)
-    assert wait_line_from_stdout(client1_stdout_queue) == ""  # TODO: extra empty line
 
-    write_stdin(client2_process, message1)
     assert "Accepted new connection from" in wait_line_from_stdout(client2_stdout_queue)
+    write_stdin(client2_process, message1)
     assert wait_line_from_stdout(server_stdout_queue) == "[{}] {}".format(username2, message1)
 
-    write_stdin(client3_process, message2)
     assert wait_line_from_stdout(client3_stdout_queue) == "[{}] {}".format(username2, message1)
+    write_stdin(client3_process, message2)
     assert wait_line_from_stdout(server_stdout_queue) == "[{}] {}".format(username3, message2)
 
-    assert wait_line_from_stdout(client1_stdout_queue, 1) is None
-    write_stdin(client1_process, "")
     assert wait_line_from_stdout(client1_stdout_queue) == "[{}] {}".format(username2, message1)
     assert wait_line_from_stdout(client1_stdout_queue) == "[{}] {}".format(username3, message2)
 
@@ -223,22 +221,18 @@ def test_private_messages():
     assert "Accepted new connection from" in wait_line_from_stdout(server_stdout_queue)
     assert "Accepted new connection from" in wait_line_from_stdout(server_stdout_queue)
 
+    assert "Accepted new connection from" in wait_line_from_stdout(client1_stdout_queue)
+    assert "Accepted new connection from" in wait_line_from_stdout(client1_stdout_queue)
     write_stdin(client1_process, message1)
     assert wait_line_from_stdout(server_stdout_queue) == "[{}] -> {}".format(username1, message1)
-    assert "Accepted new connection from" in wait_line_from_stdout(client1_stdout_queue)
-    assert "Accepted new connection from" in wait_line_from_stdout(client1_stdout_queue)
-    assert wait_line_from_stdout(client1_stdout_queue) == ""  # TODO: extra empty line
 
+    assert "Accepted new connection from" in wait_line_from_stdout(client2_stdout_queue)
     write_stdin(client2_process, message2)
     assert wait_line_from_stdout(server_stdout_queue) == "[{}] -> {}".format(username2, message2)
-    assert "Accepted new connection from" in wait_line_from_stdout(client2_stdout_queue)
     assert wait_line_from_stdout(client2_stdout_queue) == "[{}] -> {}".format(username1, message1)
 
-    write_stdin(client3_process, "")
     assert wait_line_from_stdout(client3_stdout_queue, 1) is None
 
-    assert wait_line_from_stdout(client1_stdout_queue, 1) is None
-    write_stdin(client1_process, "")
     assert wait_line_from_stdout(client1_stdout_queue) == "[{}] -> {}".format(username2, message2)
 
     write_stdin(client1_process, message3)
@@ -249,7 +243,6 @@ def test_private_messages():
     assert wait_line_from_stdout(server_stdout_queue) == "[{}] -> {}".format(username1, message4)
     assert wait_line_from_stdout(client1_stdout_queue) == "[server] -> [{}] Unknown command".format(username1)
 
-    write_stdin(client2_process, "")
     assert wait_line_from_stdout(client2_stdout_queue, 1) is None
 
 
