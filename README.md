@@ -1,5 +1,14 @@
 # python-chat-room
 ## Start
+### Run Slack bot
+Provide correct SLACK_TOKEN and SLACK_SIGNING_SECRET in bots/.slack_env
+
+Setup channel name in bots/slack_bot.py file, i.e. CHAT_CHANNEL = "chat"
+
+Run slack bot server:
+```bash
+python bots/slack_bot.py
+```
 ### localhost
 ```bash
 python server.py
@@ -26,6 +35,10 @@ python client.py 192.168.100.5 8888
     [server] 21                     - play 21 game with server
     [server] quiz                   - quiz game for all participants
 ```
+- Slack features:
+  - All messages from selected slack channel send to this chat room
+  - All public messages from this chat room send to slack channel
+  - Simple AI to answer on private messages to slack bot
 
 ## Tests
 For running tests using pytest:

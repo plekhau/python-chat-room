@@ -18,6 +18,10 @@ Features:
     [server] rock-paper-scissors    - play rock-paper-scissors game with server
     [server] 21                     - play 21 game with server
     [server] quiz                   - quiz game for all participants
+- Slack features:
+    - All messages from selected slack channel send to this chat room
+    - All public messages from this chat room send to slack channel
+    - Simple AI to answer on private messages to slack bot
 """
 import select
 import socket
@@ -124,7 +128,7 @@ def start_server():
     common.create_server_socket()
 
     while True:
-        read_sockets, _, _ = select.select(common.sockets_list.keys(), [], [])
+        read_sockets, _, _ = select.select(common.sockets_list.keys(), [], [], 1)
 
         for read_socket in read_sockets:
             if read_socket == common.server_socket:
@@ -146,6 +150,11 @@ def start_server():
                         logger.info("Unknown user was disconnected")
                     else:
                         common.send_to_all("User '{}' was disconnected".format(username))
+
+        for bot in common.bots:
+            messages = bot.get_messages()
+            for msg in messages:
+                common.send_to_all(msg, ignore_bot=bot.name())
 
 
 if __name__ == "__main__":

@@ -7,6 +7,8 @@ from typing import Dict, Callable
 import logging.config
 import time
 
+from bots.bot import Bot
+
 BUFFER_SIZE = 2048
 DEFAULT_PORT = 8888
 INIT_GAME_MSG = "init_game"
@@ -19,6 +21,10 @@ all_player_game: Dict[str, Callable] = {}  # contains active all player game wit
 
 logging.config.fileConfig('logging.conf')
 logger = logging.getLogger('chat_logger')
+
+bots = [
+    Bot("http://127.0.0.1:5555/messages"),   # slack bot
+]
 
 
 class Timer:
@@ -103,7 +109,7 @@ def send_to_one(sock: socket.socket, msg: str):
     sock.sendall(msg.encode())
 
 
-def send_to_all(msg: str, ignore_socket: socket.socket = None):
+def send_to_all(msg: str, ignore_socket: socket.socket = None, ignore_bot: str = None):
     """
     Send {message} to all connected client sockets except {ignore_socket} + print in server log
     """
@@ -112,6 +118,10 @@ def send_to_all(msg: str, ignore_socket: socket.socket = None):
     for sock in sockets_list:
         if sock not in [ignore_socket, server_socket] and sockets_list[sock]:
             send_to_one(sock, msg)
+
+    for bot in bots:
+        if bot.name() != ignore_bot:
+            bot.send_message(msg)
 
 
 def private_message(sender_sock: socket.socket, recipient_socket: socket.socket, msg: str):
