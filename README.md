@@ -35,6 +35,7 @@ python client.py 192.168.100.5 8888
     [server] 21                     - play 21 game with server
     [server] quiz                   - quiz game for all participants
 ```
+- Asyncio: receiving and sending messages work with asyncio for client app
 - Slack features:
   - All messages from selected slack channel send to this chat room
   - All public messages from this chat room send to slack channel

@@ -18,6 +18,7 @@ Features:
     [server] rock-paper-scissors    - play rock-paper-scissors game with server
     [server] 21                     - play 21 game with server
     [server] quiz                   - quiz game for all participants
+- Asyncio: receiving and sending messages work with asyncio for client app
 - Slack features:
     - All messages from selected slack channel send to this chat room
     - All public messages from this chat room send to slack channel
